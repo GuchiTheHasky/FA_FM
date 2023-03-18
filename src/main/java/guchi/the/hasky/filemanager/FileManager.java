@@ -1,12 +1,9 @@
 package guchi.the.hasky.filemanager;
 
-import org.apache.commons.io.FileUtils;
-
 import java.io.*;
 import java.util.Objects;
 
 public class FileManager implements Manager {
-
 
     @Override
     public int countFiles(String path) throws FileNotFoundException {
@@ -47,52 +44,72 @@ public class FileManager implements Manager {
     }
 
     @Override
-    public void copy(String source, String destination) throws FileNotFoundException {
+    public void copy(String source, String destination) throws IOException {
         File file = new File(source);
         File dest = new File(destination);
+        if (!file.isFile()) {
+            throw new FileNotFoundException("File:\n" + source + "\ndoesn't exist.");
+        } else if (!dest.isFile()) {
+            copyAndCreateNewFile(source, destination);
+        } else {
+            copyIfFileExist(source, destination);
+        }
+    }
+
+    @Override
+    public void copyAll(File source, File destination) throws IOException {
+        if (source.isDirectory()) {
+            if (!destination.exists()) {
+                destination.mkdir();
+            }
+            String[] files = source.list();
+            if (files == null) {
+                return;
+            }
+            for (String file : files) {
+                File srcFile = new File(source, file);
+                File destFile = new File(destination, file);
+                copyAll(srcFile, destFile);
+            }
+        } else {
+            ioFile(source, destination);
+        }
+    }
+
+    @Override
+    public void move(String source, String destination) throws IOException {
+        File from = new File(source);
+        File to = new File(destination);
+        if (!to.exists()) {
+            to.mkdirs();
+        }
+        copy(source, destination);
+        from.delete();
+    }
+
+    private void copyIfFileExist(String source, String destination) throws IOException {
+        File file = new File(source);
+        File dest = new File(destination);
+        ioFile(file, dest);
+    }
+
+    private void copyAndCreateNewFile(String source, String destination) throws IOException {
+        File file = new File(source);
+        String fileName = file.getName();
+        File dest = new File(destination + File.separator + fileName);
+        dest.createNewFile();
+        ioFile(file, dest);
+    }
+
+    private static void ioFile(File file, File dest) throws IOException {
         try (FileInputStream input = new FileInputStream(file);
              FileOutputStream output = new FileOutputStream(dest)) {
-            int size = source.length();
+            int size = (int) file.length();
             byte[] buffer = new byte[size];
             int length;
             while ((length = input.read(buffer)) != -1) {
                 output.write(buffer, 0, length);
             }
-        } catch (IOException e) {
-            throw new FileNotFoundException("Error, wrong directory or source name.");
-        }
-    }
-
-    @Override
-    public void copyAll(String source, String destination) throws FileNotFoundException {
-        File from = new File(source);
-        File to = new File(destination);
-        try {
-            FileUtils.copyDirectory(from, to);
-        } catch (IOException e) {
-            throw new FileNotFoundException("Error, wrong directory or source name.");
-        }
-    }
-
-    @Override
-    public void move(String source, String destination) throws FileNotFoundException {
-        File from = new File(source);
-        File to = new File(destination);
-        try {
-            FileUtils.moveFile(from, to);
-        } catch (IOException e) {
-            throw new FileNotFoundException("Error, wrong directory or source name.");
-        }
-    }
-
-    @Override
-    public void moveAll(String source, String destination) throws FileNotFoundException {
-        File from = new File(source);
-        File to = new File(destination);
-        try {
-            FileUtils.moveDirectory(from, to);
-        } catch (IOException e) {
-            throw new FileNotFoundException("Error, wrong directory or source name.");
         }
     }
 }

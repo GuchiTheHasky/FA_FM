@@ -21,29 +21,37 @@ public class FileManagerTest {
     FileManager manager = new FileManager();
     private static final List<File> FILE_LIST = new ArrayList<>();
     private static final List<File> DIR_LIST = new ArrayList<>();
-    private static final String wrongPath = "x:/it/is/wrong/path";
+    private static final String WRONG_PATH = "x:/it/is/wrong/path";
 
 
     private final File firstTxt = new File("src/test/java/guchi/the/hasky/filemanager/fortest/first.txt");
     private final File secondTxt = new File("src/test/java/guchi/the/hasky/filemanager/fortest/second.txt");
     private final File thirdTxt = new File("src/test/java/guchi/the/hasky/filemanager/fortest/third.txt");
-    private final File fourthTxt = new File("src/test/java/guchi/the/hasky/filemanager/fortest/dir1/fourth.txt");
-    private final File fifthTxt = new File("src/test/java/guchi/the/hasky/filemanager/fortest/dir1/dir2/dir3/fifth.txt");
-    private final File sixthTxt = new File("src/test/java/guchi/the/hasky/filemanager/fortest/dir1/dir2/dir3/sixth.txt");
-    private final File seventhTxt = new File("src/test/java/guchi/the/hasky/filemanager/fortest/dir1/dir2/dir4/seventh.txt");
+    private final File fourthTxt =
+            new File("src/test/java/guchi/the/hasky/filemanager/fortest/dir1/fourth.txt");
+    private final File fifthTxt =
+            new File("src/test/java/guchi/the/hasky/filemanager/fortest/dir1/dir2/dir3/fifth.txt");
+    private final File sixthTxt =
+            new File("src/test/java/guchi/the/hasky/filemanager/fortest/dir1/dir2/dir3/sixth.txt");
+    private final File seventhTxt =
+            new File("src/test/java/guchi/the/hasky/filemanager/fortest/dir1/dir2/dir4/seventh.txt");
 
     private final File firstDir = new File("src/test/java/guchi/the/hasky/filemanager/fortest");
     private final File secondDir = new File("src/test/java/guchi/the/hasky/filemanager/fortest/dir1");
     private final File thirdDir = new File("src/test/java/guchi/the/hasky/filemanager/fortest/dir1/dir2");
-    private final File fourthDir = new File("src/test/java/guchi/the/hasky/filemanager/fortest/dir1/dir2/dir3");
-    private final File fifthDir = new File("src/test/java/guchi/the/hasky/filemanager/fortest/dir1/dir2/dir4");
+    private final File fourthDir =
+            new File("src/test/java/guchi/the/hasky/filemanager/fortest/dir1/dir2/dir3");
+    private final File fifthDir =
+            new File("src/test/java/guchi/the/hasky/filemanager/fortest/dir1/dir2/dir4");
+
 
     @BeforeEach
     public void init() throws IOException {
         setSource();
         createDirs();
         createFiles();
-        makeContent();
+        makeContent(firstTxt);
+        createContentForMoveTest();
     }
 
     @AfterEach
@@ -51,10 +59,11 @@ public class FileManagerTest {
         setSource();
         deleteFiles();
         deleteDirs();
+        deleteContentForMoveTest();
     }
 
     @Test
-    @DisplayName("Test, count all files in directory.")
+    @DisplayName("Test, count all files in directory;")
     public void testCountFilesInSourceDirectory() throws IOException {
         String path = "src/test/java/guchi/the/hasky/filemanager/fortest";
         int actual = manager.countFiles(path);
@@ -62,10 +71,10 @@ public class FileManagerTest {
     }
 
     @Test
-    @DisplayName("Test, throw exception in count files method.")
+    @DisplayName("Test, throw exception in count files method if (!directory.exist());")
     public void testCountFilesInSourceDirectoryAndThrowException() {
         Throwable thrown = assertThrows(FileNotFoundException.class, () -> {
-            manager.countFiles(wrongPath);
+            manager.countFiles(WRONG_PATH);
         });
         assertNotNull(thrown.getMessage());
     }
@@ -73,9 +82,8 @@ public class FileManagerTest {
     @Test
     @DisplayName("Test, count all packages in source directory.")
     public void testCountPackagesInSourceDirectory() throws FileNotFoundException {
-        String path = "src/test/java/guchi/the/hasky/filemanager";
+        String path = "src/main/java";
         int actual = manager.countDirs(path);
-
         assertEquals(5, actual);
     }
 
@@ -83,7 +91,7 @@ public class FileManagerTest {
     @DisplayName("Test, count all packages in source directory and throw exception.")
     public void testCountPackagesInSourceDirectoryAndThrowException() {
         Throwable thrown = assertThrows(FileNotFoundException.class, () -> {
-            manager.countDirs(wrongPath);
+            manager.countDirs(WRONG_PATH);
         });
         assertNotNull(thrown.getMessage());
     }
@@ -105,36 +113,46 @@ public class FileManagerTest {
     }
 
     @Test
-    @DisplayName("Test, copy file to directory: false")
-    public void testCopySourceFileToSomeDirectoryFalse() {
-        Throwable thrown = assertThrows(FileNotFoundException.class, () -> {
-            manager.copy(wrongPath, wrongPath);
+    @DisplayName("Test, copy file to directory and throw exception if (!source.exist).")
+    public void testCopyFileIfSourceDirectoryFalse() {
+        Path destinationPath = Path.of(String.valueOf(secondTxt));
+        Throwable thrown = assertThrows(IOException.class, () -> {
+            manager.copy(WRONG_PATH, destinationPath.toString());
         });
         assertNotNull(thrown.getMessage());
     }
 
     @Test
-    @DisplayName("Test, copy all files to directory: throw exception")
-    public void testCopyAllFilesFromSourceToSomeDirectoryThrowException() {
-        String source = "src/test/java/guchi/the/hasky/tests/non";
-        String directory = "src/test/java/guchi/the/hasky/tests/three";
-
-        Throwable thrown = assertThrows(FileNotFoundException.class, () -> {
-            manager.copyAll(source, directory);
+    @DisplayName("Test, copy file to directory and throw exception if (!destination.exist).")
+    public void testCopyFileIfDestinationDirectoryFalse() {
+        Path sourcePath = Path.of(String.valueOf(firstTxt));
+        Throwable thrown = assertThrows(IOException.class, () -> {
+            manager.copy(sourcePath.toString(), WRONG_PATH);
         });
         assertNotNull(thrown.getMessage());
     }
 
     @Test
-    @DisplayName("Test, move file to directory & delete file in source, throw exception.")
-    public void testMoveFileFromSourceToSomeDirectoryThrowException() {
-        String source = "src/test/java/guchi/the/hasky/three/Q.txt";
-        String directory = "src/test/java/guchi/the/hasky/four/P.txt";
+    @DisplayName("Test, move file from source directory & check content.")
+    public void testMoveFileFromSourceDirectory() throws IOException {
+        String source = "src/test/java/guchi/the/hasky/filemanager/dirfrom/text.txt";
+        String destination = "src/test/java/guchi/the/hasky/filemanager/dirto";
 
-        Throwable thrown = assertThrows(FileNotFoundException.class, () -> {
-            manager.copyAll(source, directory);
-        });
-        assertNotNull(thrown.getMessage());
+        File fileFrom = new File(source);
+        String contentBeforeMove = getContent(fileFrom);
+
+        assertTrue(fileFrom.exists());
+
+        manager.move(source, destination);
+
+        assertFalse(fileFrom.exists());
+
+        File newFile = new File("src/test/java/guchi/the/hasky/filemanager/dirto/text.txt");
+        assertTrue(newFile.exists());
+
+        String contentAfterMove = getContent(newFile);
+
+        assertEquals(contentBeforeMove, contentAfterMove);
     }
 
 
@@ -148,6 +166,22 @@ public class FileManagerTest {
             file.createNewFile();
         }
     }
+
+    private void createContentForMoveTest() throws IOException {
+        new File("src/test/java/guchi/the/hasky/filemanager/dirfrom").mkdir();
+        File text = new File("src/test/java/guchi/the/hasky/filemanager/dirfrom/text.txt");
+        text.createNewFile();
+        makeContent(text);
+        new File("src/test/java/guchi/the/hasky/filemanager/dirto").mkdir();
+    }
+
+    private void deleteContentForMoveTest() {
+        new File("src/test/java/guchi/the/hasky/filemanager/dirfrom").delete();
+        new File("src/test/java/guchi/the/hasky/filemanager/dirto").delete();
+        new File("src/test/java/guchi/the/hasky/filemanager/dirto/text.txt").delete();
+        new File("src/test/java/guchi/the/hasky/filemanager/dirto").delete();
+    }
+
 
     private void createDirs() {
         for (File file : DIR_LIST) {
@@ -168,12 +202,13 @@ public class FileManagerTest {
             counter--;
         }
     }
-    private void makeContent() throws IOException {
+
+    private void makeContent(File file) throws IOException {
         String content = "Hello java!";
         String s = "";
         int rnd = new Random().nextInt(10);
 
-        try (OutputStream outputStream = new FileOutputStream(firstTxt)) {
+        try (OutputStream outputStream = new FileOutputStream(file)) {
             while (rnd != -1) {
                 outputStream.write(content.getBytes());
                 outputStream.write("\n".getBytes());
@@ -181,6 +216,7 @@ public class FileManagerTest {
             }
         }
     }
+
     private String getContent(File file) throws IOException {
         StringBuilder sb = new StringBuilder();
         try (BufferedReader reader = new BufferedReader
