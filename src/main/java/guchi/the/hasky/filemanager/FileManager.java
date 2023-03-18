@@ -6,11 +6,7 @@ import java.io.*;
 import java.util.Objects;
 
 public class FileManager implements Manager {
-    public static void main(String[] args) throws FileNotFoundException {
-        FileManager manager = new FileManager();
-        int result = manager.countFiles("c:/ProjectsToRemove");
-        System.out.println(result);
-    }
+
 
     @Override
     public int countFiles(String path) throws FileNotFoundException {
